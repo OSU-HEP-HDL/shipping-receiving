@@ -1,0 +1,5 @@
+paramiko
+pymongo
+openhtf
+numpy
+pandas
