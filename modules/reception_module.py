@@ -1,5 +1,7 @@
 import paramiko
 import stat
+import json
+from db_utils import setup_ssh_client
 
 # Have it ask vendor name, part names, qty ordered, qty recvd, date automatically. Then have it ask for pic of packing slip 
 # if available and pic of items received. May need to allow multiple pics. I would like it to ask for pic of lab equipment 
@@ -48,11 +50,14 @@ def post_mongo(client,vendor,part_name,item_description,qty_ordered,qty_recvd,da
 
 
 
+
 def post_proxmox(proxmox_auth, args, date,part_name):
     host = proxmox_auth["host"]
     port = proxmox_auth["port"]
     user = proxmox_auth["user"]
     password = proxmox_auth["password"]
+
+    part_name = part_name.replace(" ","-")
 
     remote_path = "/mnt/proxmox/images/inventory/" + date
     nested_remote_path = remote_path + "/" + part_name
@@ -62,11 +67,7 @@ def post_proxmox(proxmox_auth, args, date,part_name):
 
     try:
         # Initialize the SSH client
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        # Connect to the host
-        ssh.connect(hostname=host, port=port, username=user, password=password)
+        ssh = setup_ssh_client(proxmox_auth)
         
         files = []
         file_pathes = []

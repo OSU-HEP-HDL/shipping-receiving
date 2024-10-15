@@ -3,3 +3,6 @@ pymongo
 openhtf
 numpy
 pandas
+openpyxl
+pillow
+fnmatch

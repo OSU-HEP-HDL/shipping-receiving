@@ -22,11 +22,11 @@ def main():
   ask_image_questions()
 
   vendor = get_vendor_name()
-  part_name = manual_type("What is the part name? ")
+  part_name = manual_type("What is the part name OR model No.? ")
   item_description = manual_type("Type an item description...")
   qty_ordered = manual_type("Quantity ordered? ")
   qty_recvd = manual_type("Quantity Received? ")
-  
+
   date_time = now.strftime("%Y-%m-%d %H:%M:%S")
   date = now.strftime("%Y-%m-%d")
 

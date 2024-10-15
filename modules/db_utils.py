@@ -1,4 +1,5 @@
 import pymongo
+import paramiko
 from dotenv import dotenv_values
 
 def authenticate_user_mongodb():
@@ -18,3 +19,15 @@ def authenticate_user_proxmox():
     proxmox["port"] = keys["LOCAL_PROXMOX_PORT"]
  
     return proxmox
+
+# Setup SSH client (assumes SSH setup with paramiko)
+def setup_ssh_client(proxmox_auth):
+    host = proxmox_auth["host"]
+    port = proxmox_auth["port"]
+    user = proxmox_auth["user"]
+    password = proxmox_auth["password"]
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(host,port=port, username=user, password=password)
+    return ssh
