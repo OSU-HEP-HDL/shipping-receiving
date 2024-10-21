@@ -1,7 +1,7 @@
 import paramiko
 import stat
 import json
-from db_utils import setup_ssh_client
+from modules.db_utils import setup_ssh_client
 
 # Have it ask vendor name, part names, qty ordered, qty recvd, date automatically. Then have it ask for pic of packing slip 
 # if available and pic of items received. May need to allow multiple pics. I would like it to ask for pic of lab equipment 
@@ -11,40 +11,47 @@ def post_mongo(client,vendor,part_name,item_description,qty_ordered,qty_recvd,da
 
     sn_strings = ["sn","SN","serial_number","serialNumber","serialnumber","Serial_Number"]
     slip_strings = ["slip","slp"]
+    
+    img_sn_path = image_path
+    img_slip_path = image_path
+
     for path in file_pathes:
         sp = path.split("/")
         if any(sn_strings in sp[-1] for sn_strings in sn_strings):
             img_sn_path = path
-        else:
-            img_sn_path = image_path
+            
         if any(slip_strings in sp[-1] for slip_strings in slip_strings):
             img_slip_path = path
-        else:
-            img_slip_path = image_path
-        
+       
     db = client["local"]["inventory"]
-    collection = db[date]
+    new_id = date_time.replace(" ","-")
 
-    try:
-        if db.find_one({"Part Name": part_name}):
-            raise ValueError
-        else:       
-            upload_reception = {
-                "Vendor": vendor,
-                "Part Name": part_name,
-                "Item Description":item_description,
-                "Quantity Ordered": qty_ordered,
-                "Quantity Received": qty_recvd,
-                "Date and Time Received": date_time,
-                "Images": {
-                    "Items": image_path,
-                    "Packing Slip": img_slip_path,
-                    "Serial Number": img_sn_path
+    upload_reception = {
+                '_id': new_id,
+                'NameorModelNo': part_name,
+                'Properties': 
+                    {
+                    'Vendor': vendor,
+                    'ItemDescription':item_description,
+                    'QuantityOrdered': qty_ordered,
+                    'QuantityReceived': qty_recvd,
+                    'DateandTimeReceived': date_time,
+                    'Images': {
+                        'Directory': image_path,
+                        'PackingSlip': img_slip_path,
+                        'SerialNumber': img_sn_path
+                        }
                     }
                 }
-             
-        collection.insert_one(upload_reception)
-        print("Uploaded results locally!")
+    
+    existing_file = db.find_one({"_id": new_id})
+
+    try:
+        if existing_file:
+            raise ValueError
+        else:       
+            db.insert_one(upload_reception) 
+  
     except ValueError:
         print("Part already exists!")
 
@@ -85,7 +92,7 @@ def post_proxmox(proxmox_auth, args, date,part_name):
             # Upload the local file to the remote server
                 
                 remote_file_path = nested_remote_path + "/" + file
-                print(f"Uploading {image} to {user}:{host}:{remote_file_path}")
+                #print(f"Uploading {image} to {user}:{host}:{remote_file_path}")
                 sftp.put(image, remote_file_path)
                 file_pathes.append(remote_file_path)
 
@@ -160,11 +167,11 @@ def manual_type(text):
 
 def ask_image_questions():
     print("\nHave you included an image of the packing slip?")
-    ans1 = input("Answer:")
+    ans1 = input("Answer: ")
     print("\nHave you included an image of the items?")
-    ans2 = input("Answer:")
+    ans2 = input("Answer: ")
     print("\nHave you included an image of the item's Serial Number?")
-    ans3 = input("Answer:")
+    ans3 = input("Answer: ")
     no_list = ["no","n"]
     yes_list = ["yes","y"]
     if ans1 in no_list and ans2 in no_list and ans3 in no_list:

@@ -10,18 +10,11 @@ from modules.db_utils import authenticate_user_mongodb, authenticate_user_proxmo
 
 
 def main():
-    client = authenticate_user_mongodb()
-    proxmox = authenticate_user_proxmox()
-    now = datetime.now()
+  client = authenticate_user_mongodb()
+  proxmox_auth = authenticate_user_proxmox()
+  mongo_inventory = pull.pull_mongodb(client)
 
-    mongo_inventory = pull.pull_mongodb(client)
-
-    
-
-
-
-
-
+  pull.save_as_excel(mongo_inventory,proxmox_auth)
 
     
 if __name__ == '__main__':
