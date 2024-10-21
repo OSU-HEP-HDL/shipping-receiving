@@ -161,11 +161,3 @@ def pull_mongodb(client):
     return inventory
 
     
-
-def pull_proxmox(proxmox_auth):
-    host = proxmox_auth["host"]
-    port = proxmox_auth["port"]
-    user = proxmox_auth["user"]
-    password = proxmox_auth["password"]
-
-    inv_path = "/mnt/proxmox/images/inventory/"

@@ -1,6 +1,7 @@
 import paramiko
 import stat
 import json
+import re
 from modules.db_utils import setup_ssh_client
 
 # Have it ask vendor name, part names, qty ordered, qty recvd, date automatically. Then have it ask for pic of packing slip 
@@ -109,6 +110,58 @@ def post_proxmox(proxmox_auth, args, date,part_name):
     
     return total_remote_path,file_pathes
 
+def remove_item(mongo_client,proxmox_auth, id):
+    host = proxmox_auth["host"]
+    port = proxmox_auth["port"]
+    user = proxmox_auth["user"]
+    password = proxmox_auth["password"]
+
+    db = mongo_client['local']['inventory']
+
+    existing_file = db.find_one({"_id": id})
+ 
+    image_directory = existing_file['Properties']['Images']['Directory']
+    image_directory = re.sub(r'^.*?:', '', image_directory)
+
+    try:
+        # Convert the string ID to an ObjectId
+        result = db.delete_one({"_id": id})
+
+        # Check if a document was deleted
+        if result.deleted_count > 0:
+            print(f"Document with ID {id} deleted successfully.")
+        else:
+            print(f"No document found with ID {id}.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+    # Initialize the SSH client
+    ssh = setup_ssh_client(proxmox_auth)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # Automatically add untrusted hosts
+    try:
+        command = f'rm -rf {image_directory}'
+        stdin, stdout, stderr = ssh.exec_command(command)
+
+        # Check for errors
+        error = stderr.read().decode()
+        if error:
+            print(f"Error removing directory: {error.strip()}")
+        else:
+            print(f"Directory '{image_directory}' removed successfully.")
+        
+       
+    finally:
+        # Close the SSH connection
+        ssh.close()
+
+
+def get_item_id():
+    print("Enter Item ID")
+    item_id = input("\nID: ")
+
+    return item_id
 
 def create_remote_directory(sftp, remote_directory):
     """Create a remote directory if it does not exist."""
