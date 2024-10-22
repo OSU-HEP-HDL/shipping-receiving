@@ -60,7 +60,7 @@ def retrieve_images(proxmox_auth, remote_path, local_path):
         print(f"Error downloading files: {e}")
         return []
 
-def save_as_excel(data,proxmox_auth):
+def save_as_excel_images(data,proxmox_auth):
 
     #flatten the data
     flattened_data = [flatten_json(item) for item in data]
@@ -145,6 +145,51 @@ def save_as_excel(data,proxmox_auth):
                             # Update the image directory column width using the column letter
                             ws.column_dimensions[image_col_letter].width = image_column_width  # Update the image directory column width
 
+
+    # Save the workbook
+    wb.save("inventory_images.xlsx")
+    print("Excel file created with images from SFTP.")
+
+def save_as_excel(data,proxmox_auth):
+
+    #flatten the data
+    flattened_data = [flatten_json(item) for item in data]
+
+    #print("FLAT",flattened_data)
+    wb = Workbook()
+    ws = wb.active
+
+    local_image_folder = "./downloaded_images"  # Folder to store downloaded images locally
+
+    # Create folder if it doesn't exist
+    os.makedirs(local_image_folder, exist_ok=True)
+
+    # Define alternating colors: "forest green" and "pastel green"
+    forest_green_fill = PatternFill(start_color="F0FFF0", end_color="F0FFF0", fill_type="solid")  # light green
+    pastel_green_fill = PatternFill(start_color="C1E1C1", end_color="C1E1C1", fill_type="solid")  # Pastel green
+
+    # Adding headers
+    headers = list(flattened_data[0].keys())  # Assumes all JSON entries have the same structure
+    #print(headers)
+    
+    for idx, header in enumerate(headers):
+        ws.cell(row=1, column=idx + 1, value=header)
+        # Adjust the width of the columns based on the header length
+        column_letter = chr(65 + idx)  # Convert index to Excel column letter ('A', 'B', etc.)
+        ws.column_dimensions[column_letter].width = max(15, len(header) + 2)  # Set column width
+
+    image_count = {}
+
+    for row_idx, entry in enumerate(flattened_data, start=2):  # Start from the second row
+        # Choose the fill color based on the row number (alternating rows)
+        fill_color = forest_green_fill if row_idx % 2 == 0 else pastel_green_fill
+        
+        # Insert non-image data
+        for col_idx, (key, value) in enumerate(entry.items()):   
+
+            
+            cell = ws.cell(row=row_idx, column=col_idx + 1, value=value)
+            cell.fill = fill_color  # Apply the alternating fill color
 
     # Save the workbook
     wb.save("inventory.xlsx")
